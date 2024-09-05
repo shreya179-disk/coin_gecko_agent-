@@ -4,6 +4,7 @@ import autogen
 
 # Define the configuration directly in the Python code
 #open_api_key= put your chat-gpt keys 
+#coin-gecko key = CG-FNinjK8Xx68KNtnrATojM7sT
 config_list = [
     {
         "model": "gpt-3.5-turbo",
@@ -13,7 +14,7 @@ config_list = [
     },
     {
         "model": "coingecko",
-        "api_key": os.environ.get("COINGECKO_API_KEY", "CG-FNinjK8Xx68KNtnrATojM7sT"),
+        "api_key": os.environ.get("COINGECKO_API_KEY", "coin-gecko-key"),
         "base_url": "https://api.coingecko.com/api/v3/coins/",
         "tags": ["coingecko", "crypto"],
     }
