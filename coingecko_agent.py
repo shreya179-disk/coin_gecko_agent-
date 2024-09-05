@@ -3,10 +3,11 @@ import requests
 import autogen
 
 # Define the configuration directly in the Python code
+#open_api_key= put your chat-gpt keys 
 config_list = [
     {
         "model": "gpt-3.5-turbo",
-        "api_key": os.environ.get("CHATGPT_API_KEY", "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"),
+        "api_key": os.environ.get("CHATGPT_API_KEY", "open_api_key"),
         "base_url": "https://api.openai.com/v1/completions",
         "temperature": 0.7,  # Adjust creativity level
     },
