@@ -2,7 +2,7 @@ import os
 import requests
 import autogen
 
-# Define the configuration directly in the Python code
+
 #open_api_key= put your chat-gpt keys 
 #coin-gecko key = CG-FNinjK8Xx68KNtnrATojM7sT
 config_list = [
