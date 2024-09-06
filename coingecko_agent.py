@@ -105,7 +105,7 @@ if __name__ == "__main__":
     query = input("Enter the query: ")
 
     if not query:
-        query = """What is the current price of Bitcoin (ID: bitcoin)"""
+        query = """What is the current price of Bitcoin (ID: bitcoin) and its historical data of last 2 days"""
     
     initiate_chat(query=query)
     # print(get_coin_info("bitcoin").keys())
