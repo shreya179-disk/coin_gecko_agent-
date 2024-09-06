@@ -24,19 +24,15 @@ def get_coin_info(coin_id: str) -> str:  # Added return type
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}"
     headers = {"accept": "application/json"}
     response = requests.get(url, headers=headers)
-
-    if response.status_code == 200:
-
     # Save response to coin info.json file
-     with open("coin_info.json", "w") as file:
+    with open("coin_info.json", "w") as file:
         file.write(response.text)
-     return "coin information keys: " + str(response.json().keys())
+    return "coin information keys: " + str(response.json().keys())
 
 # Function to get historical coin data by ID and date (format: dd-mm-yyyy)
 def get_coin_history(coin_id: str, date: str) -> str:  # Added return type
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/history?date={date}"
     headers = {"accept": "application/json"}
-
     response = requests.get(url, headers=headers)
     with open("coin_history.json", "w") as file:
         file.write(response.text)
@@ -91,7 +87,7 @@ agents = [user_proxy, assistant]
 # Chat initiation
 def initiate_chat(query: str) -> None:
     group_chat = autogen.GroupChat(
-        agents=agents, messages=[], max_round=3, speaker_selection_method="round_robin"
+        agents=agents, messages=[], max_round=3
     )
     
     manager = autogen.GroupChatManager(group_chat, llm_config=llm_config)
@@ -105,7 +101,7 @@ if __name__ == "__main__":
     query = input("Enter the query: ")
 
     if not query:
-        query = """What is the current price of Bitcoin (ID: bitcoin) and its historical data of last 2 days"""
+        query = """What is the current price of Bitcoin (ID: bitcoin)"""
     
     initiate_chat(query=query)
     # print(get_coin_info("bitcoin").keys())
