@@ -1,44 +1,111 @@
 import os
 import requests
 import autogen
+from dotenv import load_dotenv
+import json
 
-# Define the configuration directly in the Python code
-#open_api_key= put your chat-gpt keys 
-#coin-gecko key = CG-FNinjK8Xx68KNtnrATojM7sT
-config_list = [
-    {
-        "model": "gpt-3.5-turbo",
-        "api_key": os.environ.get("CHATGPT_API_KEY", "open_api_key"),
-        "base_url": "https://api.openai.com/v1/completions",
-        "temperature": 0.7,  # Adjust creativity level
-    },
-    {
-        "model": "coingecko",
-        "api_key": os.environ.get("COINGECKO_API_KEY", "coin-gecko-key"),
-        "base_url": "https://api.coingecko.com/api/v3/coins/",
-        "tags": ["coingecko", "crypto"],
-    }
-]
+# Load environment variables from .env file
+load_dotenv()
 
-# Create assistant agent with config list
-llm_config = {"config_list": config_list}
-assistant = autogen.AssistantAgent(name="CoinGeckoAgent", llm_config=llm_config)
+print(type(os.environ.get("CHATGPT_API_KEY")))
+
+# Configurations for OpenAI LLMs or other services
+config_list =[{"model": "gpt-3.5-turbo", "api_key": os.environ.get("CHATGPT_API_KEY")}]
+# config_list = [
+#     {
+#         "model": "gpt-3.5-turbo",
+#         "api_key": os.environ.get("CHATGPT_API_KEY", "open_api_key"),
+#         "temperature": 0.7,  # Adjust creativity level
+#     }
+# ]
 
 # Function to get current coin data by ID
-def get_coin_info(coin_id):
+def get_coin_info(coin_id: str) -> str:  # Added return type
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}"
-    response = requests.get(url)
-    return response.json()
+    headers = {"accept": "application/json"}
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+
+    # Save response to coin info.json file
+     with open("coin_info.json", "w") as file:
+        file.write(response.text)
+     return "coin information keys: " + str(response.json().keys())
 
 # Function to get historical coin data by ID and date (format: dd-mm-yyyy)
-def get_coin_history(coin_id, date):
-    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/history?date={date}" #bitcoin #30-12-2023
-    response = requests.get(url)
-    return response.json()
+def get_coin_history(coin_id: str, date: str) -> str:  # Added return type
+    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/history?date={date}"
+    headers = {"accept": "application/json"}
 
-# Example usage
-coin_data = get_coin_info("bitcoin")
-print("Current Coin Data:", coin_data)
+    response = requests.get(url, headers=headers)
+    with open("coin_history.json", "w") as file:
+        file.write(response.text)
+    return "Coin history keys: " + str(response.json().keys())
 
-historical_data = get_coin_history("bitcoin", "01-09-2023")
-print("Historical Coin Data on 01-09-2023:", historical_data)
+def display_json_data(file_path: str) -> None:
+    with open(file_path, "r") as file:
+        data = json.load(file)
+        print(data)
+
+# Create an assistant agent for queries
+llm_config = {"config_list": config_list}
+
+user_proxy = autogen.UserProxyAgent(
+    name="user_proxy",
+    human_input_mode="ALWAYS",  # Change to ALWAYS for user input handling
+    code_execution_config={"work_dir": "coding", "use_docker": False, "last_n_messages": 3},
+    is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
+)
+
+assistant = autogen.AssistantAgent(
+    name="CoinGeckoAgent",
+    system_message="You are an agent that provides cryptocurrency data. You can fetch current and historical data using functions.", 
+    llm_config=llm_config
+)
+
+# Register functions with AutoGen
+autogen.agentchat.register_function(
+    get_coin_info,
+    caller=assistant,
+    executor=user_proxy,
+    description="Fetch current cryptocurrency data by coin ID and save it to coin_info.json."
+)
+
+autogen.agentchat.register_function(
+    get_coin_history,
+    caller=assistant,
+    executor=user_proxy,
+    description="Fetch historical cryptocurrency data by coin ID and date and save it to coin_history.json."
+)
+
+autogen.agentchat.register_function(
+    display_json_data,
+    caller=assistant,
+    executor=user_proxy,
+    description="Display JSON data from a file."
+)
+
+# Group the agents for interaction
+agents = [user_proxy, assistant]
+
+# Chat initiation
+def initiate_chat(query: str) -> None:
+    group_chat = autogen.GroupChat(
+        agents=agents, messages=[], max_round=3, speaker_selection_method="round_robin"
+    )
+    
+    manager = autogen.GroupChatManager(group_chat, llm_config=llm_config)
+
+    result = user_proxy.initiate_chat(
+        manager, 
+        message=query,
+    )
+
+if __name__ == "__main__":
+    query = input("Enter the query: ")
+
+    if not query:
+        query = """What is the current price of Bitcoin (ID: bitcoin)"""
+    
+    initiate_chat(query=query)
+    # print(get_coin_info("bitcoin").keys())
